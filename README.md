@@ -1,116 +1,84 @@
 # XTTS Voice Generator
 
-macOS desktop app for audio generation with voice cloning via [XTTS v2](https://github.com/coqui-ai/TTS) (Coqui TTS).
+App desktop macOS pour générer de l'audio avec clonage de voix via [XTTS v2](https://github.com/coqui-ai/TTS) (Coqui TTS).
 
-## Features
+## Fonctionnalités
 
-- Multilingual speech synthesis (fr, en, es, de, it, pt, etc.)
-- 58 built-in XTTS v2 voices selectable from a dropdown
-- Voice cloning from an external audio file (.wav, .mp3)
-- Direct playback of the generated file within the app
-- Custom output folder and filename selection
-- PyQt5 interface with background generation (QThread)
+- Synthèse vocale multilangue (fr, en, es, de, it, pt, etc.)
+- 58 voix intégrées XTTS v2 sélectionnables dans un dropdown
+- Clonage de voix à partir d'un fichier audio externe (.wav, .mp3)
+- Lecture directe du fichier généré dans l'app
+- Choix du dossier et nom de fichier de sortie
+- Interface PyQt5, génération en arrière-plan (QThread)
 
-## Target Architecture
+## Architecture cible
 
-Developed and tested on **Mac Apple Silicon (M4)**. XTTS v2 and its dependencies (PyTorch, Coqui TTS) are not natively optimized for ARM / Apple Silicon, which required several adaptations:
+Développé et testé sur **Mac Apple Silicon (M4)**. XTTS v2 et ses dépendances (PyTorch, Coqui TTS) ne sont pas nativement optimisés pour ARM / Apple Silicon, ce qui a nécessité plusieurs adaptations :
 
-- **Python 3.11** required (some Coqui TTS dependencies fail to compile on 3.12+ with ARM)
-- **`torch.load` patch**: Recent PyTorch enforces `weights_only=True` by default, which breaks XTTS v2 checkpoint loading — we force `weights_only=False` at startup
-- **No CUDA**: Generation runs on CPU (MPS is partially supported but unstable with XTTS) — expect ~10-30s per generation
-- ARM64 PyTorch wheels are used automatically via pip, no custom build needed
+- **Python 3.11** obligatoire (certaines dépendances de Coqui TTS ne compilent pas sur 3.12+ avec ARM)
+- **Patch `torch.load`** : PyTorch récent impose `weights_only=True` par défaut, ce qui casse le chargement des checkpoints XTTS v2 — on force `weights_only=False` au démarrage
+- **Pas de CUDA** : la génération tourne sur CPU (MPS partiellement supporté mais instable avec XTTS) — compter ~10-30s par génération
+- Les wheels PyTorch ARM64 sont utilisées automatiquement via pip, pas besoin de build custom
 
-> On Intel x86 architecture, these adaptations remain compatible but the `torch.load` patch is the only one truly necessary.
+> Sur architecture Intel x86, ces adaptations restent compatibles mais le patch `torch.load` est le seul réellement nécessaire.
 
-### Applying the patch manually via Python prompt (x86)
+## Prérequis
 
-If you're on an Intel x86 machine and want to apply the `torch.load` patch yourself (e.g. for debugging or running TTS outside the app), you can do it directly from the Python prompt:
-
-```python
-import torch
-
-_original_load = torch.load
-def patched_load(*args, **kwargs):
-    if "weights_only" not in kwargs:
-        kwargs["weights_only"] = False
-    return _original_load(*args, **kwargs)
-torch.load = patched_load
-
-# Now you can use TTS normally
-from TTS.api import TTS
-tts = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2")
-tts.tts_to_file(text="Hello world", speaker="Claribel Dervla", language="en", file_path="output.wav")
-```
-
-This forces `weights_only=False` on every `torch.load` call, which is required because XTTS v2 checkpoints use pickle-based serialization. The patch must be applied **before** importing TTS.
-
-## Prerequisites
-
-- macOS 11+ (tested on macOS 15 / Apple M4)
-- Python 3.11 (not 3.12+, incompatible with some Coqui TTS dependencies)
-- ~5 GB of disk space (XTTS v2 model + dependencies)
+- macOS 11+ (testé sur macOS 15 / Apple M4)
+- Python 3.11 (pas 3.12+, incompatible avec certaines dépendances Coqui TTS)
+- ~5 Go d'espace disque (modèle XTTS v2 + dépendances)
 
 ## Installation
 
 ```bash
-# Create the venv (Python 3.11 required)
+# Créer le venv (Python 3.11 requis)
 python3.11 -m venv xtts-env
 source xtts-env/bin/activate
 
-# Install dependencies
+# Installer les dépendances
 pip install TTS PyQt5
 
-# The XTTS v2 model is downloaded automatically on first launch (~1.8 GB)
+# Le modèle XTTS v2 se télécharge automatiquement au premier lancement (~1.8 Go)
 ```
 
-## Usage
+## Utilisation
 
-### From the terminal
+### Depuis le terminal
 
 ```bash
-source xtts-env/bin/activate
-python3 xtts_app.py
+xtts-env/bin/python3.11 xtts_app.py
 ```
 
-### Double-click (macOS .app)
+### En double-clic (macOS .app)
 
-Run `build_app.sh` to generate the app bundle:
+Lancer `build_app.sh` pour générer le bundle :
 
 ```bash
 bash build_app.sh
 ```
 
-This creates `XTTS Voice Generator.app` — double-click to launch. Drag it to the Dock or `/Applications` for quick access.
+Ça crée `XTTS Voice Generator.app` — double-clic pour lancer. Glisser dans le Dock ou `/Applications` pour un accès rapide.
+
+> **Note :** L'app utilise un launcher shell qui appelle directement `xtts-env/bin/python3.11` (pas PyInstaller). C'est beaucoup plus stable pour PyTorch/TTS sur macOS.
 
 ## Structure
 
 ```
 .
-├── xtts_app.py          # Main app (UI + TTS backend)
-├── build_app.sh         # macOS .app bundle generation
-├── xtts-env/            # Python venv (not versioned)
-└── xtts_output/         # Generated .wav files (default)
+├── xtts_app.py          # App principale (UI + backend TTS)
+├── build_app.sh         # Génération du .app macOS (launcher)
+├── xtts-env/            # Venv Python 3.11 (non versionné)
+├── xtts_voices/         # Voix custom (fichiers audio de référence)
+└── xtts_output/         # Fichiers .wav générés (par défaut)
 ```
 
-## Known Vulnerabilities
+## Known vulnerabilities
 
 - **`torch.load(weights_only=False)`**: This app patches `torch.load` to disable the `weights_only` safety check at startup. This is required because XTTS v2 checkpoints rely on pickle-based serialization which is incompatible with `weights_only=True`. Loading a malicious model file could lead to arbitrary code execution. Only use trusted model sources.
 - **`QThread.terminate()`**: The cancel button uses `QThread.terminate()` to stop generation, which is discouraged by Qt documentation as it can leave shared resources (mutexes, memory) in an inconsistent state. In practice this is low-risk since the thread only performs PyTorch inference, but it could theoretically cause instability.
 
-## XTTS v2 Usage Rules (Coqui Public Model License)
-
-This app uses the XTTS v2 model, released under the [Coqui Public Model License (CPML) 1.0.0](https://huggingface.co/coqui/XTTS-v2/blob/main/LICENSE.txt). By using this application, you agree to comply with the following terms:
-
-- **Non-commercial use only** — The XTTS v2 model may not be used for any activity that generates direct or indirect revenue.
-- **Allowed uses** — Personal research, experimentation, private study, entertainment, hobby projects, and evaluation by commercial entities for non-commercial purposes.
-- **Prohibited uses** — Revenue-generating activities, commercial model training, sublicensing, and redistribution without the license terms.
-- **Attribution required** — You must include the CPML license terms or a link to them when distributing the model or outputs derived from it.
-- **No warranty** — The model is provided "as is" with no guarantee of any kind.
-
-> Coqui AI ceased operations in January 2024. Commercial licenses are no longer available. For any use beyond personal/non-commercial, verify the applicable license terms independently.
-
 ## Notes
 
-- The `torch.load(weights_only=False)` patch is applied automatically at startup (required by XTTS v2)
-- The first launch downloads the model (~1.8 GB) to `~/.local/share/tts/`
-- Generation takes ~10-30s depending on text length (CPU)
+- Le patch `torch.load(weights_only=False)` est appliqué automatiquement au démarrage (requis par XTTS v2)
+- Le premier lancement télécharge le modèle (~1.8 Go) dans `~/.local/share/tts/`
+- La génération prend ~10-30s selon la longueur du texte (CPU)

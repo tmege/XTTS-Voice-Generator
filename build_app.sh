@@ -2,33 +2,57 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-VENV="$SCRIPT_DIR/xtts-env"
+APP_NAME="XTTS Voice Generator"
+APP_DIR="$SCRIPT_DIR/$APP_NAME.app"
 
 echo "=== XTTS App Builder ==="
 
-# Activate venv
-source "$VENV/bin/activate"
+# Clean previous build
+rm -rf "$APP_DIR"
 
-# Ensure PyInstaller is installed
-pip install pyinstaller 2>/dev/null || true
+# Create .app bundle structure
+mkdir -p "$APP_DIR/Contents/MacOS"
+mkdir -p "$APP_DIR/Contents/Resources"
 
-echo "Building .app with PyInstaller..."
-pyinstaller \
-    --name "XTTS Voice Generator" \
-    --windowed \
-    --noconfirm \
-    --clean \
-    --hidden-import=TTS \
-    --hidden-import=TTS.api \
-    --hidden-import=TTS.tts.models.xtts \
-    --hidden-import=torch \
-    --hidden-import=PyQt5 \
-    --hidden-import=PyQt5.QtMultimedia \
-    --collect-all TTS \
-    --collect-all torch \
-    "$SCRIPT_DIR/xtts_app.py"
+# Create launcher script
+cat > "$APP_DIR/Contents/MacOS/launch" << 'LAUNCHER'
+#!/bin/bash
+APP_DIR="$HOME/Dev/XTTS Voice Generator"
+exec "$APP_DIR/xtts-env/bin/python3.11" "$APP_DIR/xtts_app.py"
+LAUNCHER
+chmod +x "$APP_DIR/Contents/MacOS/launch"
+
+# Create Info.plist
+cat > "$APP_DIR/Contents/Info.plist" << 'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>XTTS Voice Generator</string>
+    <key>CFBundleDisplayName</key>
+    <string>XTTS Voice Generator</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.pab7o.xtts-voice-generator</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleExecutable</key>
+    <string>launch</string>
+    <key>CFBundleIconFile</key>
+    <string>icon</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>11.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+</dict>
+</plist>
+PLIST
 
 echo ""
 echo "Build complete!"
-echo "App location: $SCRIPT_DIR/dist/XTTS Voice Generator.app"
+echo "App location: $APP_DIR"
 echo "You can move it to /Applications if you want."
