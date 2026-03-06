@@ -22,6 +22,28 @@ Developed and tested on **Mac Apple Silicon (M4)**. XTTS v2 and its dependencies
 
 > On Intel x86 architecture, these adaptations remain compatible but the `torch.load` patch is the only one truly necessary.
 
+### Applying the patch manually via Python prompt (x86)
+
+If you're on an Intel x86 machine and want to apply the `torch.load` patch yourself (e.g. for debugging or running TTS outside the app), you can do it directly from the Python prompt:
+
+```python
+import torch
+
+_original_load = torch.load
+def patched_load(*args, **kwargs):
+    if "weights_only" not in kwargs:
+        kwargs["weights_only"] = False
+    return _original_load(*args, **kwargs)
+torch.load = patched_load
+
+# Now you can use TTS normally
+from TTS.api import TTS
+tts = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2")
+tts.tts_to_file(text="Hello world", speaker="Claribel Dervla", language="en", file_path="output.wav")
+```
+
+This forces `weights_only=False` on every `torch.load` call, which is required because XTTS v2 checkpoints use pickle-based serialization. The patch must be applied **before** importing TTS.
+
 ## Prerequisites
 
 - macOS 11+ (tested on macOS 15 / Apple M4)
