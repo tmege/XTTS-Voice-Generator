@@ -265,6 +265,8 @@ class XTTSApp(QWidget):
             filename = "output.wav"
         if not filename.endswith(".wav"):
             filename += ".wav"
+        # Sanitize: keep only the base name to prevent path traversal
+        filename = os.path.basename(filename)
 
         os.makedirs(self.output_dir, exist_ok=True)
         output_path = os.path.join(self.output_dir, filename)
@@ -272,7 +274,7 @@ class XTTSApp(QWidget):
         voice_data = self.voice_combo.currentData()
         speaker_name = None
         speaker_wav = None
-        if voice_data == VOICE_RANDOM:
+        if not voice_data or voice_data == VOICE_RANDOM:
             pass
         elif voice_data.startswith("speaker:"):
             speaker_name = voice_data[len("speaker:"):]

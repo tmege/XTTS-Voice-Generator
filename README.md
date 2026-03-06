@@ -70,6 +70,11 @@ bash build_app.sh
 └── xtts_output/         # Fichiers .wav générés (par défaut)
 ```
 
+## Known vulnerabilities
+
+- **`torch.load(weights_only=False)`**: This app patches `torch.load` to disable the `weights_only` safety check at startup. This is required because XTTS v2 checkpoints rely on pickle-based serialization which is incompatible with `weights_only=True`. Loading a malicious model file could lead to arbitrary code execution. Only use trusted model sources.
+- **`QThread.terminate()`**: The cancel button uses `QThread.terminate()` to stop generation, which is discouraged by Qt documentation as it can leave shared resources (mutexes, memory) in an inconsistent state. In practice this is low-risk since the thread only performs PyTorch inference, but it could theoretically cause instability.
+
 ## Notes
 
 - Le patch `torch.load(weights_only=False)` est appliqué automatiquement au démarrage (requis par XTTS v2)
