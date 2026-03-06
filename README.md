@@ -75,6 +75,18 @@ This creates `XTTS Voice Generator.app` — double-click to launch. Drag it to t
 - **`torch.load(weights_only=False)`**: This app patches `torch.load` to disable the `weights_only` safety check at startup. This is required because XTTS v2 checkpoints rely on pickle-based serialization which is incompatible with `weights_only=True`. Loading a malicious model file could lead to arbitrary code execution. Only use trusted model sources.
 - **`QThread.terminate()`**: The cancel button uses `QThread.terminate()` to stop generation, which is discouraged by Qt documentation as it can leave shared resources (mutexes, memory) in an inconsistent state. In practice this is low-risk since the thread only performs PyTorch inference, but it could theoretically cause instability.
 
+## XTTS v2 Usage Rules (Coqui Public Model License)
+
+This app uses the XTTS v2 model, released under the [Coqui Public Model License (CPML) 1.0.0](https://huggingface.co/coqui/XTTS-v2/blob/main/LICENSE.txt). By using this application, you agree to comply with the following terms:
+
+- **Non-commercial use only** — The XTTS v2 model may not be used for any activity that generates direct or indirect revenue.
+- **Allowed uses** — Personal research, experimentation, private study, entertainment, hobby projects, and evaluation by commercial entities for non-commercial purposes.
+- **Prohibited uses** — Revenue-generating activities, commercial model training, sublicensing, and redistribution without the license terms.
+- **Attribution required** — You must include the CPML license terms or a link to them when distributing the model or outputs derived from it.
+- **No warranty** — The model is provided "as is" with no guarantee of any kind.
+
+> Coqui AI ceased operations in January 2024. Commercial licenses are no longer available. For any use beyond personal/non-commercial, verify the applicable license terms independently.
+
 ## Notes
 
 - The `torch.load(weights_only=False)` patch is applied automatically at startup (required by XTTS v2)
