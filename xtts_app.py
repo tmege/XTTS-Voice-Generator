@@ -2,6 +2,8 @@ import sys
 import os
 
 # Patch torch.load before any TTS import
+# SECURITY: weights_only=False is required by XTTS v2 (uses pickle internally).
+# Only trusted models from Coqui TTS are loaded — never user-supplied .pth files.
 import torch
 _original_load = torch.load
 def patched_load(*args, **kwargs):
@@ -24,6 +26,7 @@ CUSTOM_VOICES_DIR = os.path.expanduser("~/Dev/xtts_voices")
 VOICE_RANDOM = "__random__"
 VOICE_BROWSE = "__browse__"
 VOICE_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg"}
+MAX_TEXT_LENGTH = 10_000  # chars — prevent OOM on very long inputs
 
 # All built-in XTTS v2 speakers
 XTTS_SPEAKERS = [
@@ -91,7 +94,7 @@ class TTSWorker(QThread):
             if self._cancel:
                 self.cancelled.emit()
             else:
-                self.error.emit(str(e))
+                self.error.emit(type(e).__name__ + ": " + str(e).replace(os.path.expanduser("~"), "~"))
 
 
 class XTTSApp(QWidget):
@@ -259,6 +262,9 @@ class XTTSApp(QWidget):
         if not text:
             QMessageBox.warning(self, "Error", "Please enter some text.")
             return
+        if len(text) > MAX_TEXT_LENGTH:
+            QMessageBox.warning(self, "Error", f"Text too long ({len(text)} chars). Max is {MAX_TEXT_LENGTH}.")
+            return
 
         filename = self.out_name.text().strip()
         if not filename:
@@ -298,8 +304,11 @@ class XTTSApp(QWidget):
             self.worker.cancel()
             self.status_label.setText("Cancelling...")
             self.gen_btn.setEnabled(False)
-            self.worker.terminate()
-            self.worker.wait(3000)
+            # Wait for graceful shutdown first, only force-terminate as last resort
+            self.worker.wait(5000)
+            if self.worker.isRunning():
+                self.worker.terminate()
+                self.worker.wait(2000)
             self._reset_ui()
             self.status_label.setText("Generation cancelled.")
 
