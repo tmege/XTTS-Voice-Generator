@@ -36,7 +36,7 @@ python3.11 -m venv xtts-env
 source xtts-env/bin/activate
 
 # Installer les dépendances
-pip install TTS PyQt5
+pip install TTS PyQt5 cutlet unidic-lite
 
 # Le modèle XTTS v2 se télécharge automatiquement au premier lancement (~1.8 Go)
 ```

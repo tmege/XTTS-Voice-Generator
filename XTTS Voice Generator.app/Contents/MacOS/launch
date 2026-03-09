@@ -1,0 +1,4 @@
+#!/bin/bash
+BASE_DIR="$HOME/Dev/XTTS Voice Generator"
+REPO_DIR="$BASE_DIR/XTTS-Voice-Generator repo"
+exec "$BASE_DIR/xtts-env/bin/python3.11" "$REPO_DIR/xtts_app.py"

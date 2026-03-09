@@ -1,5 +1,6 @@
 import sys
 import os
+import random
 
 # Patch torch.load before any TTS import
 # SECURITY: weights_only=False is required by XTTS v2 (uses pickle internally).
@@ -19,7 +20,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
-DEFAULT_OUTPUT_DIR = os.path.expanduser("~/Dev/xtts_output")
+DEFAULT_OUTPUT_DIR = os.path.expanduser("~/Dev/XTTS Voice Generator/xtts_output")
 CUSTOM_VOICES_DIR = os.path.expanduser("~/Dev/xtts_voices")
 
 # Sentinel values for voice combo
@@ -82,7 +83,7 @@ class TTSWorker(QThread):
             elif self.speaker_name:
                 kwargs["speaker"] = self.speaker_name
             else:
-                kwargs["speaker"] = "random"
+                kwargs["speaker"] = random.choice(XTTS_SPEAKERS)
             tts.tts_to_file(**kwargs)
             if self._cancel:
                 if os.path.exists(self.output_path):
@@ -276,6 +277,13 @@ class XTTSApp(QWidget):
 
         os.makedirs(self.output_dir, exist_ok=True)
         output_path = os.path.join(self.output_dir, filename)
+        # Auto-increment to avoid overwriting existing files
+        if os.path.exists(output_path):
+            base, ext = os.path.splitext(filename)
+            n = 1
+            while os.path.exists(os.path.join(self.output_dir, f"{base} ({n}){ext}")):
+                n += 1
+            output_path = os.path.join(self.output_dir, f"{base} ({n}){ext}")
 
         voice_data = self.voice_combo.currentData()
         speaker_name = None

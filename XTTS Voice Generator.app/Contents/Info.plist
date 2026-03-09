@@ -1,30 +1,3 @@
-#!/bin/bash
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_NAME="XTTS Voice Generator"
-APP_DIR="$SCRIPT_DIR/$APP_NAME.app"
-
-echo "=== XTTS App Builder ==="
-
-# Clean previous build
-rm -rf "$APP_DIR"
-
-# Create .app bundle structure
-mkdir -p "$APP_DIR/Contents/MacOS"
-mkdir -p "$APP_DIR/Contents/Resources"
-
-# Create launcher script
-cat > "$APP_DIR/Contents/MacOS/launch" << 'LAUNCHER'
-#!/bin/bash
-BASE_DIR="$HOME/Dev/XTTS Voice Generator"
-REPO_DIR="$BASE_DIR/XTTS-Voice-Generator repo"
-exec "$BASE_DIR/xtts-env/bin/python3.11" "$REPO_DIR/xtts_app.py"
-LAUNCHER
-chmod +x "$APP_DIR/Contents/MacOS/launch"
-
-# Create Info.plist
-cat > "$APP_DIR/Contents/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -51,9 +24,3 @@ cat > "$APP_DIR/Contents/Info.plist" << 'PLIST'
     <true/>
 </dict>
 </plist>
-PLIST
-
-echo ""
-echo "Build complete!"
-echo "App location: $APP_DIR"
-echo "You can move it to /Applications if you want."
