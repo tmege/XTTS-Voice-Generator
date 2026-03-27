@@ -2,6 +2,8 @@
 
 App desktop macOS pour générer de l'audio avec clonage de voix via [XTTS v2](https://github.com/coqui-ai/TTS) (Coqui TTS).
 
+![XTTS Voice Generator](assets/Screenshot%202026-03-27%20at%2023.04.53.png)
+
 ## Fonctionnalités
 
 - Synthèse vocale multilangue (fr, en, es, de, it, pt, etc.)
@@ -67,6 +69,7 @@ bash build_app.sh
 .
 ├── xtts_app.py          # App principale (UI + backend TTS)
 ├── build_app.sh         # Génération du .app macOS (launcher)
+├── assets/              # Screenshots et ressources du README
 ├── xtts-env/            # Venv Python 3.11 (non versionné)
 ├── xtts_voices/         # Voix custom (fichiers audio de référence)
 └── xtts_output/         # Fichiers .wav générés (par défaut)
